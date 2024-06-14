@@ -229,6 +229,8 @@ int main(int argc, char *argv[]) {
         input[strlen(input) - 1] = '\0';
 
         parse(input);
+        fflush(stdout);
+        fflush(stdin);
     }
 
     return 0;
