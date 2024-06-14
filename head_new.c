@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-
-
 int main(int argc, char **argv) {
 
     if (argc < 2) {
@@ -20,7 +18,7 @@ int main(int argc, char **argv) {
                 printf("Usage: %s <filename>\n", argv[0]);
                 return 0;
             case 'n':
-                line_numbers = strtol(optarg);
+                line_numbers = atoi(optarg);
                 break;
             default:
                 printf("Usage: %s <filename>\n", argv[0]);
@@ -35,11 +33,12 @@ int main(int argc, char **argv) {
     }
 
     int i = 0;
-    while (!feof(file)) {
+    while (!feof(file) && i < line_numbers) {
         char *line;
         size_t length = 0;
         getline(&line, &length, file);
         fprintf(stdout, "%s", line);
+        i++;
     }
 
     return 0;

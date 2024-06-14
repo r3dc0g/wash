@@ -50,6 +50,7 @@ int fork_child(char *args[], char *filename) {
             execvp(args[0], args);
             fprintf(stderr, "wash: command not found\n");
             fflush(stdout);
+            exit(1);
         }
         else {
             execvp(args[0], args);
@@ -167,27 +168,24 @@ int parse(char *input) {
             i++;
         }
 
-        if (!handle_builtin(args, i))
-            fork_child(args, filename);
-
-        return 0;
+    }
+    else {
+        argument = strtok(input_copy, " ");
+        while (argument != NULL) {
+            args[i] = argument;
+            argument = strtok(NULL, " ");
+            i++;
+        }
     }
 
-    argument = strtok(input_copy, " ");
-    while (argument != NULL) {
-        args[i] = argument;
-        argument = strtok(NULL, " ");
-        i++;
-    }
     args[i] = NULL;
 
     if (i == 0) {
         return 0;
     }
 
-
     if (!handle_builtin(args, i))
-        fork_child(args, NULL);
+        fork_child(args, filename);
 
     return 0;
 }
