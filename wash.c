@@ -1,3 +1,14 @@
+/* ====================================================================
+*
+*  Name:                Garrett Crites
+*  Course Number:       CSC 3350
+*  Assignment Title:    wash - Extra Credit Coding Assignment
+*  Professor:           Andy Cameron
+*  Date:                June 13, 2024
+*
+*  ====================================================================
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

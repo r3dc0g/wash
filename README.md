@@ -17,3 +17,18 @@ gcc wash.c -o wash
 ```
 gcc head_new.c -o head_new
 ```
+
+## Examples
+### wash help message
+```
+[user@host ~]$ ./wash -h
+The Washington Shell is a simple shell that supports the following commands:
+
+        -exit                   exits the shell
+        -echo [string]          prints the arguments to the screen
+        -cd [dir]               changes the current directory
+        -pwd                    prints the current working directory
+        -setpath <path>         sets the path to look for executables
+        -help                   prints this help message
+
+```
