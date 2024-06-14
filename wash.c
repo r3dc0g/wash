@@ -3,11 +3,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
-#define MAX_LINE 256 /* The maximum length command */
+// The maximum length command
+#define MAX_LINE 256
 
 int pwd() {
-    char cwd[1024];
+    char cwd[MAX_LINE];
     getcwd(cwd, sizeof(cwd));
     printf("%s\n", cwd);
     fflush(stdout);
@@ -25,27 +27,46 @@ void print_help() {
     fflush(stdout);
 }
 
-int fork_child(char **args) {
+int fork_child(char *args[], char *filename) {
     int status;
     pid_t pid = fork();
 
     if (pid < 0) {
-        fprintf(stderr, "Fork failed\n");
+        fprintf(stderr, "wash: fork failed\n");
         fflush(stdout);
         return 1;
     } else if (pid == 0) {
-        execvp(args[0], args);
-        fprintf(stderr, "wash: command not found\n");
-        fflush(stdout);
-        return 1;
+        if (filename != NULL) {
+
+            char errorname[MAX_LINE];
+            strcpy(errorname, filename);
+
+            strcat(filename, ".output\0");
+            strcat(errorname, ".error\0");
+
+            freopen(filename, "a+", stdout);
+            freopen(errorname, "a+", stderr);
+
+            execvp(args[0], args);
+            fprintf(stderr, "wash: command not found\n");
+            fflush(stdout);
+            exit(1);
+        }
+        else {
+            execvp(args[0], args);
+            fprintf(stderr, "wash: command not found\n");
+            fflush(stdout);
+            return 1;
+        }
     } else {
-        waitpid(pid, &status, 0);
+        wait(&status);
     }
 
     return 0;
 }
 
-int handle_builtin(char **args, int argc) {
+int handle_builtin(char *args[], int argc) {
+
 
     if (strcmp(args[0], "exit") == 0) {
         exit(0);
@@ -114,49 +135,63 @@ int handle_builtin(char **args, int argc) {
         return 1;
     }
 
-    if (argc > 1 && strcmp(args[1], ">")) {
-        if (args[2] == NULL) {
-            fprintf(stderr, "wash: no output file specified\n");
-            fflush(stdout);
-            return 1;
-        }
-
-        char *output = strcat(".output", args[2]);
-        FILE *fd = fopen(output, "w");
-
-        fork_child(args);
-
-        return 1;
-    }
 
     return 0;
 }
 
 int parse(char *input) {
 
-    char *args[MAX_LINE / 2 + 1];
-    char *token = strtok(input, " ");
+    char *args[MAX_LINE];
     int i = 0;
+    char input_copy[MAX_LINE];
+    char redirect_copy[MAX_LINE];
+    char *argument;
+    strcpy(input_copy, input);
+    strcpy(redirect_copy, input);
 
-    while (token != NULL) {
-        args[i] = token;
-        token = strtok(NULL, " ");
-        i++;
+
+    char *predicate = strtok(redirect_copy, ">");
+    if (predicate[strlen(predicate) - 1] == ' ') {
+        predicate[strlen(predicate) - 1] = '\0';
     }
+    char *filename = strtok(NULL, ">");
+
+    if (filename != NULL) {
+        if (filename[0] == ' ') {
+            filename++;
+        }
+
+        argument = strtok(predicate, " ");
+        while (argument != NULL) {
+            args[i] = argument;
+            argument = strtok(NULL, " ");
+            i++;
+        }
+
+    }
+    else {
+        argument = strtok(input_copy, " ");
+        while (argument != NULL) {
+            args[i] = argument;
+            argument = strtok(NULL, " ");
+            i++;
+        }
+    }
+
     args[i] = NULL;
 
     if (i == 0) {
         return 0;
     }
 
-    if (!handle_builtin(args, i - 1))
-        fork_child(args);
+    if (!handle_builtin(args, i))
+        fork_child(args, filename);
 
     return 0;
 }
 
 
-int main(int argc, char **argv) {
+int main(int argc, char *argv[]) {
 
     char input[MAX_LINE];
     int status;
@@ -165,7 +200,6 @@ int main(int argc, char **argv) {
 
         if (strcmp(argv[1], "-h") == 0) {
             print_help();
-
         }
 
         return 0;
@@ -175,9 +209,12 @@ int main(int argc, char **argv) {
     while (1) {
 
         int j = 0;
+        char *user = getenv("USER");
+        char hostname[MAX_LINE / 2];
+        gethostname(hostname, sizeof(hostname));
         char *current_dir = getcwd(NULL, MAX_LINE / 2);
 
-        printf("%s > ", current_dir);
+        printf("[%s@%s %s]$ ", user, hostname, current_dir);
         fflush(stdout);
         fflush(stdin);
 
